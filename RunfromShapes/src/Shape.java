@@ -95,13 +95,17 @@ class Shape
 	
 	public boolean checkCollide( Point center, int radius)
 	{
-		if ( Math.sqrt((center.getX()-getCenter().getX())*(center.getX()-getCenter().getX())+(center.getY()-getCenter().getY())*(center.getY()-getCenter().getY())) > (radius + getLength()))
+		if ( dist(center.getX(),center.getY(),getCenter().getX(),getCenter().getY()) > (radius + getLength()))
 			return false;
 		double area,line;
-		int x1,x2,y1,y2;
-		double angle = ( Math.atan2( center.getX() - getCenter().getX(), center.getY() - getCenter().getY()) * 180.0 )/Math.PI;
-		for ( int i = 0 ; i < maxVertices; i ++ )
-			if ( vertices[i].getAngle() <= angle && vertices[(i+1)%maxVertices].getAngle() >= angle)
+		int x1,x2,y1,y2,x3,y3;
+		x3 = center.getX();
+		y3 = center.getY();
+		double angle = Math.atan2( center.getY() - getCenter().getY(), center.getX() - getCenter().getX()) * 180.0/Math.PI;
+		if ( angle < 0)
+			angle = angle + 360.0;
+		for ( int i = 0 ; i + 1< maxVertices; i ++ )
+			if ( vertices[i].getAngle() <= angle && angle <= vertices[i+1].getAngle() )
 			{
 				x1 = getCenter().getX() + (int)(vertices[i].getLength()*Math.cos(vertices[i].getAngle()*Math.PI/180.0));
 				y1 = getCenter().getY() + (int)(vertices[i].getLength()*Math.sin(vertices[i].getAngle()*Math.PI/180.0));
@@ -109,16 +113,64 @@ class Shape
 				y2 = getCenter().getY() + (int)(vertices[(i+1)%maxVertices].getLength()*Math.sin(vertices[(i+1)%maxVertices].getAngle()*Math.PI/180.0));
 				
 				area = x1*y2 +
-					   x2*center.getY() +
-					   center.getX()*y1 -
+					   x2*y3 +
+					   x3*y1 -
 					   y1*x2 -
-					   y2*center.getX() -
-					   center.getY()*x1;
+					   y2*x3 -
+					   y3*x1;
+				
+				if ( dist( x3,y3,x1,y1) < radius)
+					return true;
+				if ( dist( x3,y3,x2,y2) < radius)
+					return true;
+					
 				line = Math.sqrt((x2-x1)*(x2-x1)+(y2-y1)*(y2-y1));
-				if( area/line > radius)
+				if( area/line >= radius)
+					return false;
+				
+				if ( angle(x1,y1,x2,y2,x3,y3)>90 || angle(x2,y2,x1,y1,x3,y3)>90)
 					return false;
 				return true;
 			}
-		return false;
+		x1 = getCenter().getX() + (int)(vertices[maxVertices-1].getLength()*Math.cos(vertices[maxVertices-1].getAngle()*Math.PI/180.0));
+		y1 = getCenter().getY() + (int)(vertices[maxVertices-1].getLength()*Math.sin(vertices[maxVertices-1].getAngle()*Math.PI/180.0));
+		x2 = getCenter().getX() + (int)(vertices[0].getLength()*Math.cos(vertices[0].getAngle()*Math.PI/180.0));
+		y2 = getCenter().getY() + (int)(vertices[0].getLength()*Math.sin(vertices[0].getAngle()*Math.PI/180.0));
+		
+		area = x1*y2 +
+			   x2*y3 +
+			   x3*y1 -
+			   y1*x2 -
+			   y2*x3 -
+			   y3*x1;
+		
+		if ( dist( x3,y3,x1,y1) < radius)
+			return true;
+		if ( dist( x3,y3,x2,y2) < radius)
+			return true;
+			
+		line = Math.sqrt((x2-x1)*(x2-x1)+(y2-y1)*(y2-y1));
+		if( area/line >= radius)
+			return false;
+		
+		
+		if ( angle(x1,y1,x2,y2,x3,y3)>90 || angle(x2,y2,x1,y1,x3,y3)>90)
+			return false;
+		return true;
+	}
+	
+	private double dist( int x1, int y1, int x2, int y2)
+	{
+		return Math.sqrt((x1-x2)*(x1-x2)+(y1-y2)*(y1-y2));
+	}
+	
+	private double angle( int x1, int y1, int x2, int y2, int x3, int y3)
+	{
+		double line1,line2,line3;
+		line1 = dist( x1,y1,x2,y2);
+		line2 = dist( x2,y2,x3,y3);
+		line3 = dist( x1,y1,x3,y3);
+		
+		return Math.acos( (line3*line3 - line1*line1 - line2*line2) / (2*line1*line2))*180/Math.PI;
 	}
 }
